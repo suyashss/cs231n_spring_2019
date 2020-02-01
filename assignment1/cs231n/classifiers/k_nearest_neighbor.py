@@ -133,9 +133,13 @@ class KNearestNeighbor(object):
         #       and two broadcast sums.                                         #
         #########################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+	t1 = np.sum(np.square(X),axis=1)# (n_test,) 
+        term1 = np.transpose(np.tile(t1,(num_train,1)))
+	t2 = np.sum(np.square(self.X_train),axis=1)# (n _train,) 
+	term2 = np.tile(t2,(num_test,1))
+	term3 = np.matmul(X,np.transpose(self.X_train)) # n_test x n_train
 
-        pass
-
+	dists = np.sqrt(term1 + term2 - 2*term3)
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         return dists
 
