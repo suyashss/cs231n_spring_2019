@@ -40,7 +40,7 @@ def softmax_loss_naive(W, X, y, reg):
         score = np.squeeze(np.transpose(W).dot(np.reshape(X[i,:],(-1,1))))
 	scale_factor = np.max(score)
 	score -= scale_factor
-	loss = np.log(np.sum(np.exp(score))) - (score[y[i]] + scale_factor)
+	loss += (np.log(np.sum(np.exp(score))) - score[y[i]])
     loss /= num_train
     loss += (reg*np.sum(np.square(W)))
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
