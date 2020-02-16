@@ -80,7 +80,10 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        s1 = X.dot(W1) + b1
+	s2 = np.maximum(s1,0)
+	s3 = s2.dot(W2) + b2
+	scores = s3	
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -97,13 +100,21 @@ class TwoLayerNet(object):
         # classifier loss.                                                          #
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-        pass
+        
+	s3 -= np.expand_dims(np.max(s3,axis=1),axis=1)
+	s4 = np.exp(s3)
+	preds = s4/np.expand_dims(np.sum(s4,axis=1),axis=1)
+	loss1 = np.sum(-1*np.log(preds[range(len(y)),y])) / N
+	loss2 = reg*np.sum(np.square(W1))
+	loss3 = reg*np.sum(np.square(W2))
+	loss = loss1 + loss2 + loss3 
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
         # Backward pass: compute gradients
         grads = {}
+	dW1 = np.zeros_like(W1)
+	dW2 = np.zeros_like(W2)
         #############################################################################
         # TODO: Compute the backward pass, computing the derivatives of the weights #
         # and biases. Store the results in the grads dictionary. For example,       #
@@ -111,8 +122,11 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
-
+       	dloss = 1 
+	dloss1 = dloss2 = dloss3 = 1
+		
+	dW1 += 2*reg*W1
+	dW2 += 2*reg*W2
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
         return loss, grads
