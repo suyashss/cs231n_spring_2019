@@ -70,6 +70,7 @@ class TwoLayerNet(object):
         W1, b1 = self.params['W1'], self.params['b1']
         W2, b2 = self.params['W2'], self.params['b2']
         N, D = X.shape
+	C = W2.shape[1]
 
         # Compute the forward pass
         scores = None
@@ -104,7 +105,10 @@ class TwoLayerNet(object):
 	s3 -= np.expand_dims(np.max(s3,axis=1),axis=1)
 	s4 = np.exp(s3)
 	preds = s4/np.expand_dims(np.sum(s4,axis=1),axis=1)
+	ymat = np.zeros((N,C))
+	ymat[range(len(y)),y]=1
 	loss1 = np.sum(-1*np.log(preds[range(len(y)),y])) / N
+	loss1 = np.sum(-1*np.log(np.diag(preds.dot(ymat.T)))) / N
 	loss2 = reg*np.sum(np.square(W1))
 	loss3 = reg*np.sum(np.square(W2))
 	loss = loss1 + loss2 + loss3 
@@ -124,9 +128,12 @@ class TwoLayerNet(object):
 
        	dloss = 1 
 	dloss1 = dloss2 = dloss3 = 1
-		
+	
 	dW1 += 2*reg*W1
 	dW2 += 2*reg*W2
+
+	#dpreds = 
+
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
         return loss, grads
