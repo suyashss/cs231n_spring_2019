@@ -55,7 +55,10 @@ class TwoLayerNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        self.params['W1'] = np.random.normal(loc=0.0,scale=weight_scale,size=(input_dim,hidden_dim))
+	self.params['b1'] = np.zeros(hidden_dim)
+        self.params['W2'] = np.random.normal(loc=0.0,scale=weight_scale,size=(hidden_dim,num_classes))
+	self.params['b2'] = np.zeros(num_classes)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -88,7 +91,9 @@ class TwoLayerNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+	layer1_out, layer1_cache = affine_relu_forward(X,self.params['W1'],self.params['b1'])
+	layer2_out, layer2_cache = affine_forward(layer1_out,self.params['W2'],self.params['b2'])
+	scores = layer2_out
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -112,7 +117,14 @@ class TwoLayerNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        if y is not None:
+		loss, dout = softmax_loss(layer2_out,y)
+		dout2,grads['W2'],grads['b2'] = affine_backward(dout,layer2_cache)
+		dX,grads['W1'],grads['b1'] = affine_relu_backward(dout2,layer1_cache)
+		loss += self.reg*0.5*np.sum(self.params['W1']**2.0)
+		loss += self.reg*0.5*np.sum(self.params['W2']**2.0)
+		grads['W1'] += self.reg*self.params['W1']
+		grads['W2'] += self.reg*self.params['W2']
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
