@@ -204,7 +204,14 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        last_dim = input_dim
+	for idx,nhidden in enumerate(hidden_dims):
+		self.params['W{}'.format(idx+1)] = np.random.normal(size=(last_dim,nhidden),loc=0.0,scale=weight_scale)
+		self.params['b{}'.format(idx+1)] = np.zeros(nhidden)
+		last_dim = nhidden
+
+	self.params['W{}'.format(self.num_layers)] = np.random.normal(size=(last_dim,num_classes),loc=0.0,scale=weight_scale)
+	self.params['b{}'.format(self.num_layers)] = np.zeros(num_classes)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -266,7 +273,16 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+       
+	cache_dict = {}	
+	last_input = X 
+	for idx in range(self.num_layers-1):
+		layer_out, layer_cache = affine_relu_forward(last_input,self.params['W{}'.format(idx+1)],self.params['b{}'.format(idx+1)])
+		last_input = layer_out
+		cache_dict[idx+1] = layer_cache
+	layer2_out, layer2_cache = affine_forward(last_input,self.params['W{}'.format(self.num_layers)],self.params['b{}'.format(self.num_layers)])
+	cache_dict[self.num_layers] = layer2_cache
+	scores = layer2_out
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -293,7 +309,21 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        if y is not None:
+		loss, dout = softmax_loss(scores,y)
+		w_str = 'W{}'.format(self.num_layers)
+		b_str = 'b{}'.format(self.num_layers)
+		dout2,grads[w_str],grads[b_str] = affine_backward(dout,layer2_cache)
+		loss += self.reg*0.5*np.sum(self.params[w_str]**2.0)
+		grads[w_str] += self.reg*self.params[w_str]
+		next_dout = dout2
+		for idx in range(self.num_layers-1)[::-1]:
+			w_str = 'W{}'.format(idx+1)
+			b_str = 'b{}'.format(idx+1)
+			dout,grads[w_str],grads[b_str] = affine_relu_backward(next_dout,cache_dict[idx+1])
+			loss += self.reg*0.5*np.sum(self.params[w_str]**2.0)
+			grads[w_str] += self.reg*self.params[w_str]
+			next_dout = dout
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
