@@ -5,6 +5,36 @@ import numpy as np
 from ..layers import *
 from ..layer_utils import *
 
+def affine_relu_dropout_forward(x, w, b, dropout_param):
+    """
+    Convenience layer that perorms an affine transform followed by a ReLU and dropout
+
+    Inputs:
+    - x: Input to the affine layer
+    - w, b: Weights for the affine layer
+
+    Returns a tuple of:
+    - out: Output from the ReLU
+    - cache: Object to give to the backward pass
+    """
+    a, fc_cache = affine_forward(x, w, b)
+    out_relu, relu_cache = relu_forward(a)
+    out, dropout_cache = dropout_forward(out_relu, dropout_param)
+    cache = (fc_cache, relu_cache, dropout_cache)
+    return out, cache
+
+
+def affine_relu_dropout_backward(dout, cache):
+    """
+    Backward pass for the affine-relu convenience layer
+    """
+    fc_cache, relu_cache, dropout_cache = cache
+    ddrop = dropout_backward(dout, dropout_cache)
+    da = relu_backward(ddrop, relu_cache)
+    dx, dw, db = affine_backward(da, fc_cache)
+    return dx, dw, db
+
+
 def affine_batchnorm_relu_forward(x, w, b, gamma, beta, bn_param):
     """
     Convenience layer that perorms an affine transform followed by batch norm and then a ReLU
@@ -348,6 +378,9 @@ class FullyConnectedNet(object):
 		elif self.normalization == "layernorm":
 			W,b,gamma,beta = [self.params['{}{}'.format(param_name,idx+1)] for param_name in ['W','b','gamma','beta']]
 			layer_out, layer_cache = affine_layernorm_relu_forward(last_input,W,b,gamma,beta,bn_param=self.bn_params[idx])
+		elif self.use_dropout:
+			W,b = [self.params['{}{}'.format(param_name,idx+1)] for param_name in ['W','b']]
+			layer_out, layer_cache = affine_relu_dropout_forward(last_input,W,b,self.dropout_param)
 		else:
 			W,b = [self.params['{}{}'.format(param_name,idx+1)] for param_name in ['W','b']]
 			layer_out, layer_cache = affine_relu_forward(last_input,W,b)
@@ -401,6 +434,8 @@ class FullyConnectedNet(object):
 				gamma_str = 'gamma{}'.format(idx+1)
 				beta_str = 'beta{}'.format(idx+1)
 				dout,grads[w_str],grads[b_str],grads[gamma_str],grads[beta_str] = affine_layernorm_relu_backward(next_dout,cache_dict[idx+1])
+			elif self.use_dropout:
+				dout,grads[w_str],grads[b_str] = affine_relu_dropout_backward(next_dout,cache_dict[idx+1])
 			else:
 				dout,grads[w_str],grads[b_str] = affine_relu_backward(next_dout,cache_dict[idx+1])
 			loss += self.reg*0.5*np.sum(self.params[w_str]**2.0)
