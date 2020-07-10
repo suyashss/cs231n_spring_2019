@@ -569,8 +569,29 @@ def conv_forward_naive(x, w, b, conv_param):
     # Hint: you can use the function np.pad for padding.                      #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+  
+    stride, pad = conv_param['stride'], conv_param['pad']
 
-    pass
+    N, C, H, W = x.shape
+    F, C, HH, WW = w.shape	
+    
+    Hnew = 1 + (H + 2 * pad - HH) / stride
+    Wnew = 1 + (W + 2 * pad - WW) / stride
+
+    pad_dim= ((0,0),(0,0),(pad,pad),(pad,pad))
+
+    xnew = np.pad(x.copy(),pad_dim,'constant') # Use default zero-padding
+
+    out = np.zeros((N,F,Hnew,Wnew))
+
+    #- x: Input data of shape (N, C, H, W)
+    #- w: Filter weights of shape (F, C, HH, WW)
+    #- b: Biases, of shape (F,)
+    for i in range(N):
+        for j in range(F):
+	    for kout,k in enumerate(range(0,H + 2 * pad - HH + 1 ,stride)):
+	    	for lout,l in enumerate(range(0,W + 2 * pad - WW + 1,stride)):
+			out[i,j,kout,lout] = np.sum(xnew[i,:,k:(k+HH),l:(l+WW)]*w[j,:,:,:]) + b[j]
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -599,8 +620,32 @@ def conv_backward_naive(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x, w, b, conv_param = cache
+    stride, pad = conv_param['stride'], conv_param['pad']
 
+    db = np.sum(dout,axis=(0,2,3))
+    dx = np.zeros_like(x)
+    dw = np.zeros_like(w)
+
+    N, C, H, W = x.shape
+    F, C, HH, WW = w.shape	
+    
+    Hnew = 1 + (H + 2 * pad - HH) / stride
+    Wnew = 1 + (W + 2 * pad - WW) / stride
+
+    pad_dim= ((0,0),(0,0),(pad,pad),(pad,pad))
+
+    xnew = np.pad(x.copy(),pad_dim,'constant') # Use default zero-padding
+    dxnew = np.zeros_like(xnew)
+    
+    for i in range(N):
+        for j in range(F):
+	    for kout,k in enumerate(range(0,H + 2 * pad - HH + 1 ,stride)):
+	    	for lout,l in enumerate(range(0,W + 2 * pad - WW + 1,stride)):
+			dw[j,:,:,:] += (dout[i,j,kout,lout]*xnew[i,:,k:(k+HH),l:(l+WW)])
+			dxnew[i,:,k:(k+HH),l:(l+WW)] += (dout[i,j,kout,lout]*w[j,:,:,:])
+
+    dx = dxnew[:,:,pad:(H+pad),pad:(W+pad)]
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -633,7 +678,20 @@ def max_pool_forward_naive(x, pool_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    stride, pool_height, pool_width = pool_param['stride'], pool_param['pool_height'], pool_param['pool_width']
+
+    N, C, H, W = x.shape
+    
+    Hnew = 1 + (H - pool_height) / stride
+    Wnew = 1 + (W - pool_height) / stride
+
+    out = np.zeros((N,C,Hnew,Wnew))
+
+    for i in range(N):
+        for j in range(C):
+	    for kout,k in enumerate(range(0,H - pool_height + 1 ,stride)):
+	    	for lout,l in enumerate(range(0,W - pool_width + 1,stride)):
+			out[i,j,kout,lout] = np.max(x[i,j,k:(k+pool_height),l:(l+pool_width)]) 
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -660,7 +718,24 @@ def max_pool_backward_naive(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x, pool_param = cache
+    stride, pool_height, pool_width = pool_param['stride'], pool_param['pool_height'], pool_param['pool_width']
+
+    N, C, H, W = x.shape
+    
+    Hnew = 1 + (H - pool_height) / stride
+    Wnew = 1 + (W - pool_height) / stride
+
+    dx = np.zeros_like(x)
+
+    for i in range(N):
+        for j in range(C):
+	    for kout,k in enumerate(range(0,H - pool_height + 1 ,stride)):
+	    	for lout,l in enumerate(range(0,W - pool_width + 1,stride)):
+			#out[i,j,kout,lout] = np.max(x[i,j,k:(k+pool_height),l:(l+pool_width)]) 
+			maxval = np.max(x[i,j,k:(k+pool_height),l:(l+pool_width)])
+			mask = ( x[i,j,k:(k+pool_height),l:(l+pool_width)] == maxval )
+			dx[i,j,k:(k+pool_height),l:(l+pool_width)] += (dout[i,j,kout,lout]*mask)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################

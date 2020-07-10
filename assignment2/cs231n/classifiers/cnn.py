@@ -63,7 +63,13 @@ class ThreeLayerConvNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+	C, H, W = input_dim
+        self.params["W1"] = np.random.normal(loc=0.0,scale=weight_scale,size=(num_filters, C, 3, 3))
+	self.params["b1"] = np.zeros((num_filters,))
+        self.params["W2"] = np.random.normal(loc=0.0,scale=weight_scale,size=(num_filters*H*W/4,hidden_dim))
+	self.params["b2"] = np.zeros(hidden_dim)
+        self.params["W3"] = np.random.normal(loc=0.0,scale=weight_scale,size=(hidden_dim,num_classes)) 
+	self.params["b3"] = np.zeros(num_classes)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -102,7 +108,11 @@ class ThreeLayerConvNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        crp_out, crp_cache = conv_relu_pool_forward(X, W1, b1, conv_param, pool_param)
+	ar_out, ar_cache = affine_relu_forward(crp_out, W2, b2)
+	ar2_out, ar2_cache = affine_forward(ar_out, W3, b3)
+
+	scores = ar2_out
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -125,7 +135,17 @@ class ThreeLayerConvNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        if y is not None:
+		loss, dout = softmax_loss(scores,y)
+		dout2,grads['W3'],grads['b3'] = affine_backward(dout,ar2_cache)
+		dout3,grads['W2'],grads['b2'] = affine_relu_backward(dout2,ar_cache)
+		dX,grads['W1'],grads['b1'] = conv_relu_pool_backward(dout3,crp_cache)
+		loss += self.reg*0.5*np.sum(self.params['W1']**2.0)
+		loss += self.reg*0.5*np.sum(self.params['W2']**2.0)
+		loss += self.reg*0.5*np.sum(self.params['W3']**2.0)
+		grads['W1'] += self.reg*self.params['W1']
+		grads['W2'] += self.reg*self.params['W2']
+		grads['W3'] += self.reg*self.params['W3']
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
